@@ -1,0 +1,43 @@
+# Selección de características
+import pandas as pd
+from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LassoCV
+from sklearn.ensemble import RandomForestClassifier
+
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+df = pd.read_csv('/content/drive/MyDrive/AA_DCCF/SPD2.csv')
+
+X = df.drop(columns=['StudentID', 'GradeClass'])  # Se elimina 'StudentID' ya que no es relevante
+y = df['GradeClass']
+
+#conjuntos entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Selección de características con Chi-cuadrado
+chi2_selector = SelectKBest(chi2, k=5)
+X_kbest_chi2 = chi2_selector.fit_transform(X_train, y_train)
+
+# Selección de características con Mutual Information
+mutual_info_selector = SelectKBest(mutual_info_classif, k=5)
+X_kbest_mutual_info = mutual_info_selector.fit_transform(X_train, y_train)
+
+# Selección de características con Lasso
+lasso = LassoCV()
+lasso.fit(X_train, y_train)
+importance = lasso.coef_
+lasso_features = X_train.columns[importance != 0]
+
+# Selección de características con Random Forest
+rf = RandomForestClassifier()
+rf.fit(X_train, y_train)
+rf_importances = rf.feature_importances_
+rf_features = X_train.columns[rf_importances > 0.05]  # Umbral de importancia
+
+print("Características seleccionadas por Chi-cuadrado:", chi2_selector.get_feature_names_out())
+print("Características seleccionadas por Mutual Information:", mutual_info_selector.get_feature_names_out())
+print("Características seleccionadas por Lasso:", lasso_features)
+print("Características seleccionadas por Random Forest:", rf_features)
